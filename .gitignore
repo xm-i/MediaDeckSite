@@ -36,4 +36,8 @@ coverage
 __screenshots__/
 
 # Vite
+.vite
 *.timestamp-*-*.mjs
+
+# Next.js (if applicable)
+.next
