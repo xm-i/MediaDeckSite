@@ -32,6 +32,7 @@ onUnmounted(() => {
         <div class="nav-links">
           <router-link to="/#features">機能</router-link>
           <router-link to="/docs">ドキュメント</router-link>
+          <a href="https://www.xm-i.net/" target="_blank" rel="noopener noreferrer">xmi</a>
           <a href="https://github.com/xm-i/MediaDeck" target="_blank" class="btn btn-primary btn-sm">
             GitHub
           </a>
@@ -46,6 +47,10 @@ onUnmounted(() => {
         <div class="footer-logo">
           <img :src="logoImage" alt="MediaDeck Logo" class="logo-img grayscale" />
           <span class="logo-text text-muted">MediaDeck</span>
+        </div>
+        <div class="footer-links">
+          <a href="https://www.xm-i.net/" target="_blank" rel="noopener noreferrer">xmi (他のプロダクト)</a>
+          <a href="https://github.com/xm-i/MediaDeck" target="_blank" rel="noopener noreferrer">GitHub</a>
         </div>
         <p class="copyright">Released under the MIT License. &copy; {{ new Date().getFullYear() }} MediaDeck Contributors.</p>
       </div>
@@ -178,6 +183,23 @@ onUnmounted(() => {
   justify-content: center;
   gap: 0.5rem;
   margin-bottom: 1rem;
+}
+
+.footer-links {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.875rem;
+}
+
+.footer-links a {
+  color: var(--text-secondary);
+  transition: color 0.2s ease;
+}
+
+.footer-links a:hover {
+  color: var(--accent-color);
 }
 
 .copyright {
