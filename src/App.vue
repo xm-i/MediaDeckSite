@@ -4,6 +4,7 @@ import './index.css'
 import logoImage from './images/Square150x150Logo.scale-200.png'
 
 const isScrolled = ref(false)
+const isMobileMenuOpen = ref(false)
 
 const handleScroll = () => {
   isScrolled.value = window.scrollY > 50
@@ -23,9 +24,9 @@ onUnmounted(() => {
     <div class="grid-bg"></div>
     <div class="glow-bg"></div>
 
-    <nav :class="['navbar', { 'navbar-scrolled': isScrolled }]">
+    <nav :class="['navbar', { 'navbar-scrolled': isScrolled || isMobileMenuOpen, 'navbar-mobile-open': isMobileMenuOpen }]">
       <div class="nav-content container">
-        <router-link to="/" class="logo">
+        <router-link to="/" class="logo" @click="isMobileMenuOpen = false">
           <img :src="logoImage" alt="MediaDeck Logo" class="logo-img" />
           <span class="logo-text">MediaDeck</span>
         </router-link>
@@ -37,7 +38,35 @@ onUnmounted(() => {
             GitHub
           </a>
         </div>
+        
+        <button 
+          class="mobile-menu-btn" 
+          @click="isMobileMenuOpen = !isMobileMenuOpen"
+          :aria-expanded="isMobileMenuOpen"
+          aria-label="メニューを開閉"
+        >
+          <svg v-if="!isMobileMenuOpen" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="4" x2="20" y1="12" y2="12"/>
+            <line x1="4" x2="20" y1="6" y2="6"/>
+            <line x1="4" x2="20" y1="18" y2="18"/>
+          </svg>
+          <svg v-else width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
       </div>
+
+      <transition name="fade-slide">
+        <div v-if="isMobileMenuOpen" class="mobile-menu-panel">
+          <router-link to="/#features" @click="isMobileMenuOpen = false">機能</router-link>
+          <router-link to="/docs" @click="isMobileMenuOpen = false">ドキュメント</router-link>
+          <a href="https://www.xm-i.net/" target="_blank" rel="noopener noreferrer" @click="isMobileMenuOpen = false">xmi</a>
+          <a href="https://github.com/xm-i/MediaDeck" target="_blank" class="btn btn-primary btn-md" @click="isMobileMenuOpen = false">
+            GitHub
+          </a>
+        </div>
+      </transition>
     </nav>
 
     <router-view />
@@ -101,6 +130,15 @@ onUnmounted(() => {
   top: 1rem;
 }
 
+.navbar-mobile-open {
+  border-radius: 24px;
+  background: rgba(10, 10, 10, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+  top: 1rem;
+}
+
 .nav-content {
   display: flex;
   justify-content: space-between;
@@ -159,6 +197,11 @@ onUnmounted(() => {
   font-size: 0.8125rem;
 }
 
+.btn-md {
+  padding: 0.625rem 1.5rem;
+  font-size: 0.875rem;
+}
+
 .btn-primary {
   background: #fff;
   color: #000;
@@ -168,6 +211,63 @@ onUnmounted(() => {
 .btn-primary:hover {
   transform: translateY(-2px) scale(1.02);
   box-shadow: 0 10px 25px rgba(255, 255, 255, 0.2);
+}
+
+.mobile-menu-btn {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: 4px;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s ease;
+}
+
+.mobile-menu-btn:hover {
+  opacity: 0.8;
+}
+
+.mobile-menu-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.5rem 0.5rem 1rem 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin-top: 0.75rem;
+}
+
+.mobile-menu-panel a:not(.btn) {
+  font-size: 1rem;
+  font-weight: 500;
+  opacity: 0.8;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.mobile-menu-panel a:not(.btn):hover {
+  opacity: 1;
+  transform: translateX(4px);
+}
+
+.mobile-menu-panel .btn {
+  justify-content: center;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+/* Fade-slide transition */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.fade-slide-enter-from,
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 
 /* Footer */
@@ -209,5 +309,10 @@ onUnmounted(() => {
 
 @media (max-width: 768px) {
   .nav-links { display: none; }
+  .mobile-menu-btn { display: flex; }
+}
+
+@media (min-width: 769px) {
+  .mobile-menu-panel { display: none !important; }
 }
 </style>
