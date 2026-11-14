@@ -7,10 +7,10 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
+node_modules/
 .DS_Store
-dist
-dist-ssr
+dist/
+dist-ssr/
 coverage
 *.local
 
@@ -18,10 +18,11 @@ coverage
 .vscode/*
 !.vscode/extensions.json
 .idea
+.vs/
 *.suo
+*.user
 *.ntvs*
 *.njsproj
-*.sln
 *.sw?
 
 *.tsbuildinfo
@@ -36,8 +37,14 @@ coverage
 __screenshots__/
 
 # Vite
-.vite
+.vite/
 *.timestamp-*-*.mjs
 
 # Next.js (if applicable)
 .next
+
+# .NET / ASP.NET Core
+bin/
+obj/
+publish/
+backend/wwwroot/
