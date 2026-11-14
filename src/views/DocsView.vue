@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { useLocale } from '@/i18n'
 
 interface NavItem {
   path: string
@@ -8,36 +9,75 @@ interface NavItem {
 }
 
 const route = useRoute()
+const { locale } = useLocale()
 const isDocsMenuOpen = ref(false)
 
-const navItems: NavItem[] = [
-  { path: '/docs/getting-started', title: '1. はじめに' },
-  { path: '/docs/basic-operations', title: '2. 基本操作' },
-  { path: '/docs/repository', title: '3. リポジトリ管理' },
-  { path: '/docs/search-filter', title: '4. 検索・フィルタリング' },
-  { path: '/docs/tags', title: '5. タグ管理' },
-  { path: '/docs/metadata', title: '6. 詳細情報・メタデータ' },
-  { path: '/docs/tools', title: '7. ツール' },
-  { path: '/docs/settings', title: '8. 設定' },
-  { path: '/docs/map', title: '9. マップビュー' },
-]
+const t = computed(() =>
+  locale.value === 'ja'
+    ? {
+        docsFallback: 'ドキュメント',
+        mobilePrefix: '目次',
+        sidebarTitle: 'ドキュメント目次',
+        closeAriaLabel: '閉じる',
+        breadcrumbAriaLabel: 'パンくずリスト',
+        pagerAriaLabel: '前後のページ',
+        prevLabel: '前のページ',
+        nextLabel: '次のページ',
+      }
+    : {
+        docsFallback: 'Documentation',
+        mobilePrefix: 'Contents',
+        sidebarTitle: 'Documentation',
+        closeAriaLabel: 'Close',
+        breadcrumbAriaLabel: 'Breadcrumb',
+        pagerAriaLabel: 'Page navigation',
+        prevLabel: 'Previous',
+        nextLabel: 'Next',
+      }
+)
 
-const currentIndex = computed(() => navItems.findIndex((item) => item.path === route.path))
+const navItems = computed<NavItem[]>(() =>
+  locale.value === 'ja'
+    ? [
+        { path: '/docs/getting-started', title: '1. はじめに' },
+        { path: '/docs/basic-operations', title: '2. 基本操作' },
+        { path: '/docs/repository', title: '3. リポジトリ管理' },
+        { path: '/docs/search-filter', title: '4. 検索・フィルタリング' },
+        { path: '/docs/tags', title: '5. タグ管理' },
+        { path: '/docs/metadata', title: '6. 詳細情報・メタデータ' },
+        { path: '/docs/tools', title: '7. ツール' },
+        { path: '/docs/settings', title: '8. 設定' },
+        { path: '/docs/map', title: '9. マップビュー' },
+      ]
+    : [
+        { path: '/docs/getting-started', title: '1. Getting Started' },
+        { path: '/docs/basic-operations', title: '2. Basic Operations' },
+        { path: '/docs/repository', title: '3. Repository Management' },
+        { path: '/docs/search-filter', title: '4. Search & Filtering' },
+        { path: '/docs/tags', title: '5. Tag Management' },
+        { path: '/docs/metadata', title: '6. Details & Metadata' },
+        { path: '/docs/tools', title: '7. Tools' },
+        { path: '/docs/settings', title: '8. Settings' },
+        { path: '/docs/map', title: '9. Map View' },
+      ]
+)
+
+const currentIndex = computed(() => navItems.value.findIndex((item) => item.path === route.path))
 
 const currentTitle = computed(() => {
   const idx = currentIndex.value
-  const item = idx >= 0 ? navItems[idx] : undefined
-  return item ? item.title : 'ドキュメント'
+  const item = idx >= 0 ? navItems.value[idx] : undefined
+  return item ? item.title : t.value.docsFallback
 })
 
 const prevItem = computed<NavItem | undefined>(() => {
   const idx = currentIndex.value
-  return idx > 0 ? navItems[idx - 1] : undefined
+  return idx > 0 ? navItems.value[idx - 1] : undefined
 })
 
 const nextItem = computed<NavItem | undefined>(() => {
   const idx = currentIndex.value
-  return idx >= 0 && idx < navItems.length - 1 ? navItems[idx + 1] : undefined
+  return idx >= 0 && idx < navItems.value.length - 1 ? navItems.value[idx + 1] : undefined
 })
 
 const handleKeydown = (e: KeyboardEvent) => {
@@ -74,7 +114,7 @@ onUnmounted(() => {
         aria-controls="docs-sidebar-nav"
       >
         <span class="docs-mobile-label-group">
-          <span class="docs-mobile-prefix">目次</span>
+          <span class="docs-mobile-prefix">{{ t.mobilePrefix }}</span>
           <span class="active-title">{{ currentTitle }}</span>
         </span>
         <svg
@@ -96,12 +136,12 @@ onUnmounted(() => {
     <!-- Sidebar Menu Drawer -->
     <aside id="docs-sidebar-nav" :class="['docs-sidebar', { 'mobile-open': isDocsMenuOpen }]">
       <div class="mobile-sidebar-header">
-        <span class="mobile-sidebar-title">ドキュメント目次</span>
+        <span class="mobile-sidebar-title">{{ t.sidebarTitle }}</span>
         <button
           type="button"
           class="close-btn"
           @click="isDocsMenuOpen = false"
-          aria-label="閉じる"
+          :aria-label="t.closeAriaLabel"
         >
           <svg
             width="20"
@@ -120,8 +160,8 @@ onUnmounted(() => {
         </button>
       </div>
 
-      <div class="sidebar-section-label">ドキュメント目次</div>
-      <nav class="docs-nav" aria-label="ドキュメント目次">
+      <div class="sidebar-section-label">{{ t.sidebarTitle }}</div>
+      <nav class="docs-nav" :aria-label="t.sidebarTitle">
         <ul>
           <li v-for="item in navItems" :key="item.path">
             <router-link
@@ -149,7 +189,7 @@ onUnmounted(() => {
     <!-- Main Content Area -->
     <main class="docs-main">
       <div class="docs-article-column">
-        <nav class="docs-breadcrumb" aria-label="パンくずリスト">
+        <nav class="docs-breadcrumb" :aria-label="t.breadcrumbAriaLabel">
           <router-link to="/docs" class="breadcrumb-root mono">Docs</router-link>
           <span class="breadcrumb-sep" aria-hidden="true">/</span>
           <span class="breadcrumb-current">{{ currentTitle }}</span>
@@ -162,7 +202,7 @@ onUnmounted(() => {
         <nav
           v-if="prevItem || nextItem"
           class="docs-pager"
-          aria-label="前後のページ"
+          :aria-label="t.pagerAriaLabel"
         >
           <router-link
             v-if="prevItem"
@@ -183,7 +223,7 @@ onUnmounted(() => {
               >
                 <path d="m15 18-6-6 6-6" />
               </svg>
-              前のページ
+              {{ t.prevLabel }}
             </span>
             <span class="pager-title">{{ prevItem.title }}</span>
           </router-link>
@@ -195,7 +235,7 @@ onUnmounted(() => {
             class="pager-card pager-next"
           >
             <span class="pager-dir">
-              次のページ
+              {{ t.nextLabel }}
               <svg
                 width="14"
                 height="14"

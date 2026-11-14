@@ -1,12 +1,50 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { useLocale } from '@/i18n'
 import './index.css'
 import logoImage from './images/Square150x150Logo.scale-200.png'
 
 const route = useRoute()
+const { locale, setLocale } = useLocale()
 const isScrolled = ref(false)
 const isMobileMenuOpen = ref(false)
+
+const t = computed(() =>
+  locale.value === 'ja'
+    ? {
+        mainNavLabel: 'メインナビゲーション',
+        mobileNavLabel: 'モバイルナビゲーション',
+        footerNavLabel: 'フッターナビゲーション',
+        features: '機能',
+        formats: '対応形式',
+        docs: 'ドキュメント',
+        docsFooter: 'ドキュメント',
+        download: 'ダウンロード',
+        releases: 'リリース',
+        xmiFooter: 'xmi (他のプロダクト)',
+        toggleMenu: 'メニューを開閉',
+        switchLanguageLabel: '表示言語の切り替え',
+        languageLabel: '表示言語',
+        footerDesc: 'Windows 10 / 11 向けの高機能メディア管理アプリケーション',
+      }
+    : {
+        mainNavLabel: 'Main navigation',
+        mobileNavLabel: 'Mobile navigation',
+        footerNavLabel: 'Footer navigation',
+        features: 'Features',
+        formats: 'Formats',
+        docs: 'Docs',
+        docsFooter: 'Documentation',
+        download: 'Download',
+        releases: 'Releases',
+        xmiFooter: 'xmi (More Products)',
+        toggleMenu: 'Toggle menu',
+        switchLanguageLabel: 'Switch language',
+        languageLabel: 'Language',
+        footerDesc: 'Advanced media management application for Windows 10 / 11',
+      }
+)
 
 const handleScroll = () => {
   isScrolled.value = window.scrollY > 16
@@ -47,19 +85,53 @@ onUnmounted(() => {
           <span class="logo-text">MediaDeck</span>
         </router-link>
 
-        <nav class="nav-links" aria-label="メインナビゲーション">
-          <router-link to="/#features" class="nav-link">機能</router-link>
-          <router-link to="/#media" class="nav-link">対応形式</router-link>
+        <nav class="nav-links" :aria-label="t.mainNavLabel">
+          <router-link to="/#features" class="nav-link">{{ t.features }}</router-link>
+          <router-link to="/#media" class="nav-link">{{ t.formats }}</router-link>
           <router-link
             to="/docs"
             :class="['nav-link', { 'is-active': route.path.startsWith('/docs') }]"
           >
-            ドキュメント
+            {{ t.docs }}
           </router-link>
           <a href="https://www.xm-i.net/" target="_blank" rel="noopener noreferrer" class="nav-link">
             xmi
           </a>
           <div class="nav-divider" aria-hidden="true"></div>
+          <div class="lang-switch" role="group" :aria-label="t.switchLanguageLabel">
+            <svg
+              class="lang-icon"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.75"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
+              <path d="M2 12h20" />
+            </svg>
+            <button
+              type="button"
+              :class="['lang-btn', { 'is-active': locale === 'ja' }]"
+              :aria-pressed="locale === 'ja'"
+              @click="setLocale('ja')"
+            >
+              JA
+            </button>
+            <button
+              type="button"
+              :class="['lang-btn', { 'is-active': locale === 'en' }]"
+              :aria-pressed="locale === 'en'"
+              @click="setLocale('en')"
+            >
+              EN
+            </button>
+          </div>
           <a
             href="https://github.com/xm-i/MediaDeck"
             target="_blank"
@@ -79,7 +151,7 @@ onUnmounted(() => {
             rel="noopener noreferrer"
             class="btn btn-primary btn-sm"
           >
-            ダウンロード
+            {{ t.download }}
           </a>
         </nav>
 
@@ -89,7 +161,7 @@ onUnmounted(() => {
           @click="isMobileMenuOpen = !isMobileMenuOpen"
           :aria-expanded="isMobileMenuOpen"
           aria-controls="mobile-navigation-drawer"
-          aria-label="メニューを開閉"
+          :aria-label="t.toggleMenu"
         >
           <svg
             v-if="!isMobileMenuOpen"
@@ -131,19 +203,19 @@ onUnmounted(() => {
           id="mobile-navigation-drawer"
           class="mobile-menu-panel"
         >
-          <nav class="container mobile-menu-inner" aria-label="モバイルナビゲーション">
+          <nav class="container mobile-menu-inner" :aria-label="t.mobileNavLabel">
             <router-link to="/#features" class="mobile-nav-link" @click="isMobileMenuOpen = false">
-              機能
+              {{ t.features }}
             </router-link>
             <router-link to="/#media" class="mobile-nav-link" @click="isMobileMenuOpen = false">
-              対応形式
+              {{ t.formats }}
             </router-link>
             <router-link
               to="/docs"
               :class="['mobile-nav-link', { 'is-active': route.path.startsWith('/docs') }]"
               @click="isMobileMenuOpen = false"
             >
-              ドキュメント
+              {{ t.docs }}
             </router-link>
             <a
               href="https://www.xm-i.net/"
@@ -154,6 +226,27 @@ onUnmounted(() => {
             >
               xmi
             </a>
+            <div class="mobile-lang-row">
+              <span class="mobile-lang-label">{{ t.languageLabel }}</span>
+              <div class="mobile-lang-switch" role="group" :aria-label="t.switchLanguageLabel">
+                <button
+                  type="button"
+                  :class="['mobile-lang-btn', { 'is-active': locale === 'ja' }]"
+                  :aria-pressed="locale === 'ja'"
+                  @click="setLocale('ja')"
+                >
+                  日本語 (JA)
+                </button>
+                <button
+                  type="button"
+                  :class="['mobile-lang-btn', { 'is-active': locale === 'en' }]"
+                  :aria-pressed="locale === 'en'"
+                  @click="setLocale('en')"
+                >
+                  English (EN)
+                </button>
+              </div>
+            </div>
             <div class="mobile-menu-actions">
               <a
                 href="https://github.com/xm-i/MediaDeck"
@@ -171,7 +264,7 @@ onUnmounted(() => {
                 class="btn btn-primary btn-lg"
                 @click="isMobileMenuOpen = false"
               >
-                ダウンロード
+                {{ t.download }}
               </a>
             </div>
           </nav>
@@ -189,13 +282,13 @@ onUnmounted(() => {
             <span class="footer-name">MediaDeck</span>
           </div>
           <p class="footer-desc">
-            Windows 10 / 11 向けの高機能メディア管理アプリケーション
+            {{ t.footerDesc }}
           </p>
         </div>
 
         <div class="footer-meta">
-          <nav class="footer-links" aria-label="フッターナビゲーション">
-            <router-link to="/docs">ドキュメント</router-link>
+          <nav class="footer-links" :aria-label="t.footerNavLabel">
+            <router-link to="/docs">{{ t.docsFooter }}</router-link>
             <a href="https://github.com/xm-i/MediaDeck" target="_blank" rel="noopener noreferrer">
               GitHub
             </a>
@@ -204,10 +297,10 @@ onUnmounted(() => {
               target="_blank"
               rel="noopener noreferrer"
             >
-              リリース
+              {{ t.releases }}
             </a>
             <a href="https://www.xm-i.net/" target="_blank" rel="noopener noreferrer">
-              xmi (他のプロダクト)
+              {{ t.xmiFooter }}
             </a>
           </nav>
           <p class="copyright">
@@ -289,6 +382,7 @@ onUnmounted(() => {
   font-weight: 500;
   color: var(--text-secondary);
   border-radius: var(--radius-sm);
+  white-space: nowrap;
   transition:
     color 140ms cubic-bezier(0.23, 1, 0.32, 1),
     background-color 140ms cubic-bezier(0.23, 1, 0.32, 1);
@@ -309,6 +403,66 @@ onUnmounted(() => {
   height: 18px;
   background-color: var(--border-subtle);
   margin: 0 4px;
+}
+
+.lang-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  min-height: 32px;
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.lang-icon {
+  color: var(--text-muted);
+  margin: 0 4px 0 6px;
+  flex-shrink: 0;
+}
+
+.lang-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 26px;
+  padding: 2px 8px;
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  user-select: none;
+  transition:
+    color 140ms cubic-bezier(0.23, 1, 0.32, 1),
+    background-color 140ms cubic-bezier(0.23, 1, 0.32, 1),
+    border-color 140ms cubic-bezier(0.23, 1, 0.32, 1),
+    transform 80ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.lang-btn:hover {
+  color: var(--text-primary);
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.lang-btn:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+.lang-btn:active {
+  transform: scale(0.97);
+}
+
+.lang-btn.is-active {
+  color: var(--accent-primary);
+  background-color: var(--accent-subtle);
+  border-color: var(--accent-border);
 }
 
 .mobile-menu-btn {
@@ -372,6 +526,74 @@ onUnmounted(() => {
 .mobile-nav-link.is-active {
   color: var(--text-primary);
   background-color: rgba(255, 255, 255, 0.05);
+}
+
+.mobile-lang-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 12px 12px 4px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.mobile-lang-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.mobile-lang-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  background-color: var(--bg-canvas);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.mobile-lang-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 8px 12px;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  user-select: none;
+  transition:
+    color 140ms cubic-bezier(0.23, 1, 0.32, 1),
+    background-color 140ms cubic-bezier(0.23, 1, 0.32, 1),
+    border-color 140ms cubic-bezier(0.23, 1, 0.32, 1),
+    transform 80ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.mobile-lang-btn:hover {
+  color: var(--text-primary);
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+.mobile-lang-btn:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+.mobile-lang-btn:active {
+  transform: scale(0.97);
+}
+
+.mobile-lang-btn.is-active {
+  color: var(--accent-primary);
+  background-color: var(--accent-subtle);
+  border-color: var(--accent-border);
+  font-weight: 600;
 }
 
 .mobile-menu-actions {
@@ -461,6 +683,21 @@ onUnmounted(() => {
 .copyright {
   color: var(--text-muted);
   font-size: 0.8125rem;
+}
+
+@media (max-width: 900px) {
+  .nav-links {
+    gap: 4px;
+  }
+
+  .nav-link {
+    padding: 6px 8px;
+    font-size: 0.8125rem;
+  }
+
+  .nav-divider {
+    margin: 0 2px;
+  }
 }
 
 @media (max-width: 768px) {

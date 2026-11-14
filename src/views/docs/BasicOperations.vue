@@ -1,7 +1,13 @@
+<script setup lang="ts">
+import { useLocale } from '@/i18n'
+
+const { locale } = useLocale()
+</script>
+
 <template>
-  <div>
+  <div v-if="locale === 'ja'">
     <h1>2. 基本操作</h1>
-    
+
     <h2>メインウィンドウの見方</h2>
     <p>メインウィンドウは以下のゾーンで構成されています：</p>
     <ul>
@@ -48,6 +54,60 @@
         <tr>
           <td><strong>マップ表示 (Map)</strong></td>
           <td>位置情報(GPS)を持つファイルを地図上にピン表示します。</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div v-else>
+    <h1>2. Basic Operations</h1>
+
+    <h2>Main Window Layout</h2>
+    <p>The main window is organized into the following zones:</p>
+    <ul>
+      <li><strong>Title Bar</strong>: App icon, navigation menu, and notification button</li>
+      <li><strong>Tab Bar</strong>: Switch and add tabs, plus system notifications via InfoBar</li>
+      <li><strong>Repository Pane (Top Left)</strong>: Folder or album tree view</li>
+      <li><strong>Sort &amp; Filter Pane (Bottom Left)</strong>: Configure sorting and filtering conditions</li>
+      <li><strong>Viewer Pane (Center)</strong>: Media display (Grid / List / Detail / Map)</li>
+      <li><strong>Detail Pane (Right)</strong>: Properties and tag information for the selected media</li>
+      <li><strong>Status Bar</strong>: Background task progress indicator</li>
+    </ul>
+    <p>Each pane can be freely resized using <code>GridSplitter</code>. The window background uses a translucent <code>DesktopAcrylicBackdrop</code> effect.</p>
+
+    <h2>Working with Tabs</h2>
+    <p>Just like a web browser, you can add and remove tabs to manage multiple views in parallel.</p>
+    <ul>
+      <li><strong>Rename Tab</strong>: Double-click a tab or select "Rename" from its context menu.</li>
+      <li><strong>Move Tab</strong>: Use the context menu to choose "Open in New Window" or "Move to Another Window".</li>
+      <li><strong>Tab State Persistence</strong>: Sort, filter, and display settings are saved per tab, and new tabs inherit the "default tab state".</li>
+    </ul>
+
+    <h2>Browsing Files (View Modes)</h2>
+    <p>The center Viewer Pane supports four display modes for browsing your media:</p>
+    <table>
+      <thead>
+        <tr>
+          <th>View</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Grid View (Wrap)</strong></td>
+          <td>Arranges thumbnails in tiles. Scale sizes with a slider and toggle filename and info overlays.</td>
+        </tr>
+        <tr>
+          <td><strong>List View (List)</strong></td>
+          <td>Displays media in a table with customizable columns including filename, resolution, file size, creation date, and rating.</td>
+        </tr>
+        <tr>
+          <td><strong>Detail View (Detail)</strong></td>
+          <td>Shows a large preview of the currently selected file.</td>
+        </tr>
+        <tr>
+          <td><strong>Map View (Map)</strong></td>
+          <td>Plots files with GPS location data as pins on an interactive map.</td>
         </tr>
       </tbody>
     </table>

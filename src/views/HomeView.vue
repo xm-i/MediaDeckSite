@@ -1,6 +1,10 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useLocale } from '@/i18n'
 import mainImage from '../images/main.png'
 import mapImage from '../images/map.png'
+
+const { locale } = useLocale()
 
 interface HighlightItem {
   label: string
@@ -32,114 +36,317 @@ interface SystemSpec {
   value: string
 }
 
-const coreHighlights: HighlightItem[] = [
-  {
-    label: '大量ファイルでも待たない表示',
-    detail: '読み込み中も操作が止まらず、数万件のメディアをスムーズに一覧・プレビュー',
-  },
-  {
-    label: '瞬時に絞り込める高速検索',
-    detail: 'タグ・フォルダ・解像度・評価・撮影日などを組み合わせて即座にフィルタリング',
-  },
-  {
-    label: 'マルチタブ・マルチウィンドウ',
-    detail: 'ブラウザのように複数タブや別ウィンドウを開き、並行して整理作業が可能',
-  },
-]
+const t = computed(() =>
+  locale.value === 'ja'
+    ? {
+        heroMetaTag: 'Windows 10 / 11 対応 ・ 無料 / オープンソース',
+        heroTitlePrefix: '数万件のメディアを、',
+        heroTitleSuffix: '瞬時に検索・整理する',
+        heroSubtitle:
+          '画像・RAW・動画・PDF・アーカイブを一元管理。数万ファイルのライブラリでも待たされることなく、タグ付け・条件検索・マップでの振り返りを軽快に行えます。',
+        downloadLatest: '最新リリースをダウンロード',
+        readDocs: 'ドキュメントを読む',
+        mainImageAlt: 'MediaDeck メインウィンドウの画面例（グリッド表示と検索バー、詳細ペイン）',
+        highlightsAriaLabel: '主な特徴',
+        featuresTitle: '高速検索と精緻なライブラリ管理',
+        featuresSubtitle:
+          'ペイン単位でリサイズ可能なマルチタブ構成と、大規模コレクションを前提とした検索・整理ワークフロー。',
+        tokenSearchTitle: 'トークン型検索 & prop. プロパティ比較',
+        tokenSearchDescBefore: '検索バーへの入力からタグ・フォルダ・アルバム・住所を即座にサジェスト。さらに',
+        tokenSearchDescAfter:
+          'プレフィックスで解像度・評価・ファイルサイズ・日時・メディア種別の比較条件をトークンとして組み合わせて絞り込めます。',
+        mockTagChip: 'Tag: 風景',
+        mockSuggestionHeader: 'プロパティ候補サジェスト',
+        tagMgmtTitle: '階層タグ・読み仮名(Ruby)・エイリアス管理',
+        tagMgmtDesc:
+          'タグごとにカテゴリ・読み仮名（Ruby）・自動変換ローマ字・別名（エイリアス）を登録でき、表記ゆれを吸収したタグ検索と詳細ペインからの素早い付与に対応します。',
+        mockTagCategory: 'カテゴリ: 場所・景観',
+        mockTagMainName: '風景',
+        mockTagReadingLabel: '読み仮名 / ローマ字',
+        mockTagAliasLabel: 'エイリアス',
+        mapSectionTitle: '4つのビューモードと地図ブラウジング',
+        mapSectionSubtitle:
+          '用途に応じた閲覧モードをワンクリックで切り替え。GPS情報を自動抽出し、撮影地ごとに写真をクラスタリング表示します。',
+        mapImageAlt: 'MediaDeck マップビュー（位置情報に基づく写真のピン表示とクラスタリング）',
+        mapCaption: 'マップ表示 — GPS座標によるピン留めとクラスター集計',
+        mediaSectionTitle: '画像も動画も、これひとつで管理',
+        mediaSectionSubtitle:
+          '写真やRAWデータから動画・PDF・圧縮書庫まで、普段使うファイルをひとつのライブラリで快適に扱えます。',
+        specsTitle: 'システム要件と導入ガイド',
+        specsSubtitle:
+          'Windows 環境ですぐに使い始められます。導入方法や操作手順はドキュメントをご確認ください。',
+      }
+    : {
+        heroMetaTag: 'For Windows 10 / 11 · Free & Open Source',
+        heroTitlePrefix: 'Search and Organize Tens of Thousands ',
+        heroTitleSuffix: 'of Media Files Instantly',
+        heroSubtitle:
+          'Manage images, RAW photos, videos, PDFs, and archives in one unified library. Tag, filter by complex properties, and browse on a map without waiting—even across tens of thousands of files.',
+        downloadLatest: 'Download Latest Release',
+        readDocs: 'Read Documentation',
+        mainImageAlt: 'MediaDeck main window showing grid view, search bar, and detail pane',
+        highlightsAriaLabel: 'Key highlights',
+        featuresTitle: 'High-Speed Search & Precision Library Management',
+        featuresSubtitle:
+          'Resizable multi-pane, multi-tab workspace engineered for searching and organizing large-scale media collections.',
+        tokenSearchTitle: 'Token Search & prop. Property Comparison',
+        tokenSearchDescBefore:
+          'Instantly suggests tags, folders, albums, and addresses as you type. Combine property comparisons for resolution, rating, file size, dates, and media type as tokens using the ',
+        tokenSearchDescAfter: ' prefix.',
+        mockTagChip: 'Tag: Landscape',
+        mockSuggestionHeader: 'Property Suggestions',
+        tagMgmtTitle: 'Hierarchical Tags, Reading (Ruby) & Aliases',
+        tagMgmtDesc:
+          'Assign categories, phonetic readings (Ruby), auto-converted Romaji, and aliases to each tag for flexible lookup and rapid tagging directly from the detail pane.',
+        mockTagCategory: 'Category: Places & Scenery',
+        mockTagMainName: '風景 (Landscape)',
+        mockTagReadingLabel: 'Reading / Romaji',
+        mockTagAliasLabel: 'Aliases',
+        mapSectionTitle: 'Four View Modes & Map Browsing',
+        mapSectionSubtitle:
+          'Switch viewing modes in one click. Automatically extracts GPS coordinates and clusters photos by capture location.',
+        mapImageAlt: 'MediaDeck Map View showing photo pins and location clustering',
+        mapCaption: 'Map View — GPS pin plotting and zoom-aware clustering',
+        mediaSectionTitle: 'Manage Images, Videos, and More in One Place',
+        mediaSectionSubtitle:
+          'From photos and RAW camera files to videos, PDFs, and compressed archives—manage everyday files smoothly in one library.',
+        specsTitle: 'System Requirements & Getting Started',
+        specsSubtitle:
+          'Ready to run on Windows. Check the documentation for installation instructions and workflows.',
+      }
+)
 
-const searchSuggestionRows = [
-  { token: 'prop.CreationTime >= 2026-01-01', type: '日時' },
-  { token: 'prop.FileSize > 100MB', type: '数値' },
-  { token: 'prop.MediaType = Image', type: '種別' },
-]
+const coreHighlights = computed<HighlightItem[]>(() =>
+  locale.value === 'ja'
+    ? [
+        {
+          label: '大量ファイルでも待たない表示',
+          detail: '読み込み中も操作が止まらず、数万件のメディアをスムーズに一覧・プレビュー',
+        },
+        {
+          label: '瞬時に絞り込める高速検索',
+          detail: 'タグ・フォルダ・解像度・評価・撮影日などを組み合わせて即座にフィルタリング',
+        },
+        {
+          label: 'マルチタブ・マルチウィンドウ',
+          detail: 'ブラウザのように複数タブや別ウィンドウを開き、並行して整理作業が可能',
+        },
+      ]
+    : [
+        {
+          label: 'Instant Browsing at Scale',
+          detail:
+            'Stream tens of thousands of media files smoothly without blocking UI interactions while loading',
+        },
+        {
+          label: 'High-Speed Multi-Faceted Search',
+          detail: 'Filter immediately by combining tags, folders, resolution, rating, and capture date',
+        },
+        {
+          label: 'Multi-Tab & Multi-Window',
+          detail:
+            'Open multiple tabs or separate windows like a browser to organize collections in parallel',
+        },
+      ]
+)
+
+const searchSuggestionRows = computed(() =>
+  locale.value === 'ja'
+    ? [
+        { token: 'prop.CreationTime >= 2026-01-01', type: '日時' },
+        { token: 'prop.FileSize > 100MB', type: '数値' },
+        { token: 'prop.MediaType = Image', type: '種別' },
+      ]
+    : [
+        { token: 'prop.CreationTime >= 2026-01-01', type: 'Date' },
+        { token: 'prop.FileSize > 100MB', type: 'Number' },
+        { token: 'prop.MediaType = Image', type: 'Enum' },
+      ]
+)
 
 const tagAliases = ['landscape', 'scenery', '自然景観']
 
-const secondaryFeatures: BentoItem[] = [
-  {
-    id: 'repository',
-    title: 'リポジトリ管理（フォルダ & アルバム）',
-    description:
-      'OSのディレクトリ構造をそのまま辿るフォルダリポジトリ（サブフォルダ包含切り替え対応）と、ドラッグ＆ドロップや「/」区切りの階層で整理できる仮想アルバムリポジトリを切り替えて管理できます。',
-    icon: 'folder-tree',
-  },
-  {
-    id: 'duplicates',
-    title: '重複ファイルの検出とサムネイル管理',
-    description:
-      'ファイル名が異なっていても中身が同じ重複ファイルを高速・正確に検出し、空き容量の確保をサポート。動画の好きなシーンを選べるサムネイルピッカーも搭載しています。',
-    icon: 'layers',
-  },
-  {
-    id: 'sync',
-    title: '外部ファイル変更の自動検出・同期',
-    description:
-      'エクスプローラー等でのファイル移動・リネーム・削除を検出し、タイトルバーに通知。専用ウィンドウから移動のみ・削除のみ等のフィルターで確認し、データベースへ個別または一括で反映できます。',
-    icon: 'refresh',
-  },
-]
+const secondaryFeatures = computed<BentoItem[]>(() =>
+  locale.value === 'ja'
+    ? [
+        {
+          id: 'repository',
+          title: 'リポジトリ管理（フォルダ & アルバム）',
+          description:
+            'OSのディレクトリ構造をそのまま辿るフォルダリポジトリ（サブフォルダ包含切り替え対応）と、ドラッグ＆ドロップや「/」区切りの階層で整理できる仮想アルバムリポジトリを切り替えて管理できます。',
+          icon: 'folder-tree',
+        },
+        {
+          id: 'duplicates',
+          title: '重複ファイルの検出とサムネイル管理',
+          description:
+            'ファイル名が異なっていても中身が同じ重複ファイルを高速・正確に検出し、空き容量の確保をサポート。動画の好きなシーンを選べるサムネイルピッカーも搭載しています。',
+          icon: 'layers',
+        },
+        {
+          id: 'sync',
+          title: '外部ファイル変更の自動検出・同期',
+          description:
+            'エクスプローラー等でのファイル移動・リネーム・削除を検出し、タイトルバーに通知。専用ウィンドウから移動のみ・削除のみ等のフィルターで確認し、データベースへ個別または一括で反映できます。',
+          icon: 'refresh',
+        },
+      ]
+    : [
+        {
+          id: 'repository',
+          title: 'Repository Management (Folders & Albums)',
+          description:
+            'Switch between Folder Repositories that mirror your OS directory tree (with subfolder inclusion toggles) and virtual Album Repositories organized via drag-and-drop or "/" hierarchies.',
+          icon: 'folder-tree',
+        },
+        {
+          id: 'duplicates',
+          title: 'Duplicate Detection & Thumbnail Control',
+          description:
+            'Quickly and accurately detect identical files even with different filenames to reclaim disk space, plus pick any video frame as a custom thumbnail.',
+          icon: 'layers',
+        },
+        {
+          id: 'sync',
+          title: 'Automatic External File Change Sync',
+          description:
+            'Detects moves, renames, and deletions made in File Explorer with a title-bar notification. Review changes filtered by move or deletion and apply them individually or in bulk.',
+          icon: 'refresh',
+        },
+      ]
+)
 
-const viewerModes: ViewerMode[] = [
-  {
-    name: 'グリッド表示',
-    key: 'Wrap',
-    summary: 'サイズスライダーとオーバーレイ表示切り替えに対応したサムネイル一覧',
-  },
-  {
-    name: 'リスト表示',
-    key: 'List',
-    summary: '解像度・ファイルサイズ・作成日時・評価を列カスタマイズ可能なテーブル表示',
-  },
-  {
-    name: '詳細表示',
-    key: 'Detail',
-    summary: '選択中の画像やドキュメントを大きく確認できるプレビューモード',
-  },
-  {
-    name: 'マップ表示',
-    key: 'Map',
-    summary: 'EXIFのGPS座標から撮影地点を地図上にマッピングして閲覧',
-  },
-]
+const viewerModes = computed<ViewerMode[]>(() =>
+  locale.value === 'ja'
+    ? [
+        {
+          name: 'グリッド表示',
+          key: 'Wrap',
+          summary: 'サイズスライダーとオーバーレイ表示切り替えに対応したサムネイル一覧',
+        },
+        {
+          name: 'リスト表示',
+          key: 'List',
+          summary: '解像度・ファイルサイズ・作成日時・評価を列カスタマイズ可能なテーブル表示',
+        },
+        {
+          name: '詳細表示',
+          key: 'Detail',
+          summary: '選択中の画像やドキュメントを大きく確認できるプレビューモード',
+        },
+        {
+          name: 'マップ表示',
+          key: 'Map',
+          summary: 'EXIFのGPS座標から撮影地点を地図上にマッピングして閲覧',
+        },
+      ]
+    : [
+        {
+          name: 'Grid View',
+          key: 'Wrap',
+          summary: 'Thumbnail grid with size slider and customizable filename/info overlays',
+        },
+        {
+          name: 'List View',
+          key: 'List',
+          summary: 'Table view with customizable columns for resolution, file size, creation date, and rating',
+        },
+        {
+          name: 'Detail View',
+          key: 'Detail',
+          summary: 'Large preview mode for inspecting the selected image or document',
+        },
+        {
+          name: 'Map View',
+          key: 'Map',
+          summary: 'Plot files with EXIF GPS coordinates as pins on an interactive map',
+        },
+      ]
+)
 
-const mapHighlights = [
-  'EXIF等から緯度・経度を自動抽出しデータベースへ保存',
-  '近接スポットを縮尺に応じてグループ化するクラスタリング表示',
-  '住所・地名トークンによる位置情報ベースの検索と絞り込み',
-]
+const mapHighlights = computed(() =>
+  locale.value === 'ja'
+    ? [
+        'EXIF等から緯度・経度を自動抽出しデータベースへ保存',
+        '近接スポットを縮尺に応じてグループ化するクラスタリング表示',
+        '住所・地名トークンによる位置情報ベースの検索と絞り込み',
+      ]
+    : [
+        'Automatically extracts latitude and longitude from EXIF metadata into the database',
+        'Zoom-aware clustering groups nearby capture spots for clean browsing',
+        'Search and filter collections by address or place name tokens',
+      ]
+)
 
-const mediaTypes: MediaTypeSpec[] = [
-  {
-    name: '画像',
-    formats: ['JPEG', 'PNG', 'GIF', 'BMP', 'TIFF', 'HEIF', 'PSD', 'RAW (RAF)', 'ICO', 'PCX', 'Netpbm'],
-    note: '写真・イラストからカメラのRAWデータまで。EXIF等の撮影情報も自動で読み取ります。',
-    icon: 'image',
-  },
-  {
-    name: '動画',
-    formats: ['MP4', 'MKV', 'AVI', 'MOV', '各種動画形式'],
-    note: '主要な動画フォーマットを網羅。動画内の好きなシーンを選んでサムネイルに設定できます。',
-    icon: 'video',
-  },
-  {
-    name: 'PDF',
-    formats: ['PDF'],
-    note: '複数ページのPDFドキュメントも軽快にプレビュー・サムネイル表示できます。',
-    icon: 'pdf',
-  },
-  {
-    name: 'アーカイブ',
-    formats: ['ZIP', '7z', 'RAR'],
-    note: 'ZIPなどの圧縮ファイルを解凍することなく、そのままライブラリ内で管理・閲覧できます。',
-    icon: 'archive',
-  },
-]
+const mediaTypes = computed<MediaTypeSpec[]>(() =>
+  locale.value === 'ja'
+    ? [
+        {
+          name: '画像',
+          formats: ['JPEG', 'PNG', 'GIF', 'BMP', 'TIFF', 'HEIF', 'PSD', 'RAW (RAF)', 'ICO', 'PCX', 'Netpbm'],
+          note: '写真・イラストからカメラのRAWデータまで。EXIF等の撮影情報も自動で読み取ります。',
+          icon: 'image',
+        },
+        {
+          name: '動画',
+          formats: ['MP4', 'MKV', 'AVI', 'MOV', '各種動画形式'],
+          note: '主要な動画フォーマットを網羅。動画内の好きなシーンを選んでサムネイルに設定できます。',
+          icon: 'video',
+        },
+        {
+          name: 'PDF',
+          formats: ['PDF'],
+          note: '複数ページのPDFドキュメントも軽快にプレビュー・サムネイル表示できます。',
+          icon: 'pdf',
+        },
+        {
+          name: 'アーカイブ',
+          formats: ['ZIP', '7z', 'RAR'],
+          note: 'ZIPなどの圧縮ファイルを解凍することなく、そのままライブラリ内で管理・閲覧できます。',
+          icon: 'archive',
+        },
+      ]
+    : [
+        {
+          name: 'Images',
+          formats: ['JPEG', 'PNG', 'GIF', 'BMP', 'TIFF', 'HEIF', 'PSD', 'RAW (RAF)', 'ICO', 'PCX', 'Netpbm'],
+          note: 'From everyday photos and illustrations to camera RAW files, with automatic EXIF metadata extraction.',
+          icon: 'image',
+        },
+        {
+          name: 'Videos',
+          formats: ['MP4', 'MKV', 'AVI', 'MOV', 'FFmpeg formats'],
+          note: 'Supports major video formats. Pick any frame from a video to set as its custom thumbnail.',
+          icon: 'video',
+        },
+        {
+          name: 'PDF',
+          formats: ['PDF'],
+          note: 'Fast multi-page PDF preview rendering and thumbnail generation.',
+          icon: 'pdf',
+        },
+        {
+          name: 'Archives',
+          formats: ['ZIP', '7z', 'RAR'],
+          note: 'Organize and browse compressed archive files directly in your library without extracting.',
+          icon: 'archive',
+        },
+      ]
+)
 
-const systemSpecs: SystemSpec[] = [
-  { label: '対応OS', value: 'Windows 10 (1809) 以降 / Windows 11' },
-  { label: '表示言語', value: '日本語 / 英語（切替・OS追従）' },
-  { label: 'ライセンス', value: '無料・オープンソース (MIT License)' },
-]
+const systemSpecs = computed<SystemSpec[]>(() =>
+  locale.value === 'ja'
+    ? [
+        { label: '対応OS', value: 'Windows 10 (1809) 以降 / Windows 11' },
+        { label: '表示言語', value: '日本語 / 英語（切替・OS追従）' },
+        { label: 'ライセンス', value: '無料・オープンソース (MIT License)' },
+      ]
+    : [
+        { label: 'Supported OS', value: 'Windows 10 (1809) or later / Windows 11' },
+        { label: 'Display Language', value: 'Japanese / English (In-app switch & OS default)' },
+        { label: 'License', value: 'Free & Open Source (MIT License)' },
+      ]
+)
 </script>
 
 <template>
@@ -148,14 +355,15 @@ const systemSpecs: SystemSpec[] = [
     <section class="hero container">
       <div class="hero-copy">
         <div class="hero-meta-tag">
-          Windows 10 / 11 対応 ・ 無料 / オープンソース
+          {{ t.heroMetaTag }}
         </div>
         <h1 class="hero-title">
-          <span class="hero-phrase">数万件のメディアを、</span
-          ><span class="hero-phrase">瞬時に検索・整理する</span>
+          <span class="hero-phrase">{{ t.heroTitlePrefix }}</span
+          ><template v-if="locale === 'en'"> </template
+          ><span class="hero-phrase">{{ t.heroTitleSuffix }}</span>
         </h1>
         <p class="hero-subtitle">
-          画像・RAW・動画・PDF・アーカイブを一元管理。数万ファイルのライブラリでも待たされることなく、タグ付け・条件検索・マップでの振り返りを軽快に行えます。
+          {{ t.heroSubtitle }}
         </p>
         <div class="hero-actions">
           <a
@@ -164,7 +372,7 @@ const systemSpecs: SystemSpec[] = [
             rel="noopener noreferrer"
             class="btn btn-primary btn-lg"
           >
-            最新リリースをダウンロード
+            {{ t.downloadLatest }}
             <svg
               width="16"
               height="16"
@@ -182,7 +390,7 @@ const systemSpecs: SystemSpec[] = [
             </svg>
           </a>
           <router-link to="/docs" class="btn btn-secondary btn-lg">
-            ドキュメントを読む
+            {{ t.readDocs }}
           </router-link>
         </div>
       </div>
@@ -191,14 +399,14 @@ const systemSpecs: SystemSpec[] = [
         <div class="showcase-frame">
           <img
             :src="mainImage"
-            alt="MediaDeck メインウィンドウの画面例（グリッド表示と検索バー、詳細ペイン）"
+            :alt="t.mainImageAlt"
             class="showcase-img"
             width="1150"
             height="822"
           />
         </div>
 
-        <div class="highlights-strip" aria-label="主な特徴">
+        <div class="highlights-strip" :aria-label="t.highlightsAriaLabel">
           <div
             v-for="item in coreHighlights"
             :key="item.label"
@@ -214,9 +422,9 @@ const systemSpecs: SystemSpec[] = [
     <!-- Asymmetric Bento Grid Section -->
     <section id="features" class="section container">
       <div class="section-header">
-        <h2 class="section-title">高速検索と精緻なライブラリ管理</h2>
+        <h2 class="section-title">{{ t.featuresTitle }}</h2>
         <p class="section-subtitle">
-          ペイン単位でリサイズ可能なマルチタブ構成と、大規模コレクションを前提とした検索・整理ワークフロー。
+          {{ t.featuresSubtitle }}
         </p>
       </div>
 
@@ -240,11 +448,10 @@ const systemSpecs: SystemSpec[] = [
               </svg>
             </div>
             <div>
-              <h3 class="bento-title">トークン型検索 &amp; prop. プロパティ比較</h3>
+              <h3 class="bento-title">{{ t.tokenSearchTitle }}</h3>
               <p class="bento-desc">
-                検索バーへの入力からタグ・フォルダ・アルバム・住所を即座にサジェスト。さらに
-                <code class="inline-code">prop.</code>
-                プレフィックスで解像度・評価・ファイルサイズ・日時・メディア種別の比較条件をトークンとして組み合わせて絞り込めます。
+                {{ t.tokenSearchDescBefore }}<code class="inline-code">prop.</code
+                >{{ t.tokenSearchDescAfter }}
               </p>
             </div>
           </div>
@@ -253,7 +460,7 @@ const systemSpecs: SystemSpec[] = [
           <div class="mini-mockup" aria-hidden="true">
             <div class="search-bar-mock">
               <span class="token-chip">Folder=C:\Photos</span>
-              <span class="token-chip">Tag: 風景</span>
+              <span class="token-chip">{{ t.mockTagChip }}</span>
               <span class="token-chip token-chip-accent mono">prop.Width &gt;= 3840</span>
               <span class="token-chip token-chip-accent mono">prop.Rate &gt;= 4</span>
               <span class="search-cursor mono">prop.</span>
@@ -261,7 +468,7 @@ const systemSpecs: SystemSpec[] = [
 
             <div class="suggestion-popover">
               <div class="suggestion-header">
-                <span>プロパティ候補サジェスト</span>
+                <span>{{ t.mockSuggestionHeader }}</span>
                 <span class="mono">prop.*</span>
               </div>
               <div
@@ -297,9 +504,9 @@ const systemSpecs: SystemSpec[] = [
               </svg>
             </div>
             <div>
-              <h3 class="bento-title">階層タグ・読み仮名(Ruby)・エイリアス管理</h3>
+              <h3 class="bento-title">{{ t.tagMgmtTitle }}</h3>
               <p class="bento-desc">
-                タグごとにカテゴリ・読み仮名（Ruby）・自動変換ローマ字・別名（エイリアス）を登録でき、表記ゆれを吸収したタグ検索と詳細ペインからの素早い付与に対応します。
+                {{ t.tagMgmtDesc }}
               </p>
             </div>
           </div>
@@ -309,19 +516,19 @@ const systemSpecs: SystemSpec[] = [
             <div class="tag-inspector">
               <div class="tag-inspector-top">
                 <div>
-                  <div class="tag-category-label">カテゴリ: 場所・景観</div>
-                  <div class="tag-main-name">風景</div>
+                  <div class="tag-category-label">{{ t.mockTagCategory }}</div>
+                  <div class="tag-main-name">{{ t.mockTagMainName }}</div>
                 </div>
                 <span class="tag-usage-badge mono tabular-nums">UsageCount: 142</span>
               </div>
 
               <div class="tag-meta-rows">
                 <div class="tag-meta-row">
-                  <span class="tag-meta-key">読み仮名 / ローマ字</span>
+                  <span class="tag-meta-key">{{ t.mockTagReadingLabel }}</span>
                   <span class="tag-meta-val mono">ふうけい / fuukei</span>
                 </div>
                 <div class="tag-meta-row">
-                  <span class="tag-meta-key">エイリアス</span>
+                  <span class="tag-meta-key">{{ t.mockTagAliasLabel }}</span>
                   <div class="tag-alias-list">
                     <span v-for="alias in tagAliases" :key="alias" class="alias-pill">
                       {{ alias }}
@@ -397,9 +604,9 @@ const systemSpecs: SystemSpec[] = [
     <section id="map" class="section container">
       <div class="split-panel">
         <div class="split-copy">
-          <h2 class="section-title">4つのビューモードと地図ブラウジング</h2>
+          <h2 class="section-title">{{ t.mapSectionTitle }}</h2>
           <p class="section-subtitle">
-            用途に応じた閲覧モードをワンクリックで切り替え。GPS情報を自動抽出し、撮影地ごとに写真をクラスタリング表示します。
+            {{ t.mapSectionSubtitle }}
           </p>
 
           <div class="viewer-mode-grid">
@@ -437,14 +644,14 @@ const systemSpecs: SystemSpec[] = [
           <div class="showcase-frame">
             <img
               :src="mapImage"
-              alt="MediaDeck マップビュー（位置情報に基づく写真のピン表示とクラスタリング）"
+              :alt="t.mapImageAlt"
               class="showcase-img"
               width="1336"
               height="811"
             />
           </div>
           <p class="frame-caption">
-            マップ表示 — GPS座標によるピン留めとクラスター集計
+            {{ t.mapCaption }}
           </p>
         </div>
       </div>
@@ -453,9 +660,9 @@ const systemSpecs: SystemSpec[] = [
     <!-- Media Formats -->
     <section id="media" class="section container">
       <div class="section-header">
-        <h2 class="section-title">画像も動画も、これひとつで管理</h2>
+        <h2 class="section-title">{{ t.mediaSectionTitle }}</h2>
         <p class="section-subtitle">
-          写真やRAWデータから動画・PDF・圧縮書庫まで、普段使うファイルをひとつのライブラリで快適に扱えます。
+          {{ t.mediaSectionSubtitle }}
         </p>
       </div>
 
@@ -545,9 +752,9 @@ const systemSpecs: SystemSpec[] = [
       <div class="specs-panel">
         <div class="specs-header">
           <div>
-            <h2 class="specs-title">システム要件と導入ガイド</h2>
+            <h2 class="specs-title">{{ t.specsTitle }}</h2>
             <p class="specs-subtitle">
-              Windows 環境ですぐに使い始められます。導入方法や操作手順はドキュメントをご確認ください。
+              {{ t.specsSubtitle }}
             </p>
           </div>
           <div class="specs-cta">
@@ -557,10 +764,10 @@ const systemSpecs: SystemSpec[] = [
               rel="noopener noreferrer"
               class="btn btn-primary btn-md"
             >
-              最新リリースをダウンロード
+              {{ t.downloadLatest }}
             </a>
             <router-link to="/docs" class="btn btn-secondary btn-md">
-              ドキュメントを読む
+              {{ t.readDocs }}
             </router-link>
           </div>
         </div>
