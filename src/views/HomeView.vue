@@ -1,470 +1,1250 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
-import '../index.css'
 import mainImage from '../images/main.png'
 import mapImage from '../images/map.png'
 
-const features = [
-  {
-    title: 'リポジトリ管理',
-    description: '複数のローカルフォルダをリポジトリとして登録し、一括して管理。',
-    icon: 'folder'
-  },
-  {
-    title: '高速検索・フィルタリング',
-    description: 'SQLiteと非同期fetchの最適化により、数万件のライブラリも待機時間なく瞬時にフィルタリング。',
-    icon: 'zap'
-  },
-  {
-    title: '高度なプロパティ検索',
-    description: 'prop. プレフィックスを用いた詳細なプロパティ比較（解像度、ファイルサイズ、日付、評価等）を直感的に操作可能。',
-    icon: 'sliders'
-  },
-  {
-    title: 'ストリーミング読み込み',
-    description: 'IAsyncEnumerable を活用した読み込みにより、UIをブロックせずバックグラウンドで逐次表示。',
-    icon: 'activity'
-  },
-  {
-    title: '自動メタデータ・タグ管理',
-    description: 'Magick.NET や FFMpegCore による自動抽出。タグカテゴリ、ふりがな、エイリアス機能による高度な整理。',
-    icon: 'tag'
-  },
-  {
-    title: '多彩なビューア',
-    description: 'リスト表示、グリッド表示、詳細表示に加え、位置情報を利用したマップ表示に対応。',
-    icon: 'layout'
-  }
-]
-
-const mediaTypes = [
-  { name: '画像', formats: 'JPEG, PNG, GIF, BMP, TIFF, HEIF, PSD, RAW (RAF), ICO, PCX, Netpbm 等', icon: 'image' },
-  { name: '動画', formats: 'MP4, MKV, AVI, MOV 等 (FFMpegがサポートする形式)', icon: 'video' },
-  { name: 'PDF', formats: 'Windows.Data.Pdf を利用した高速な表示とサムネイル生成', icon: 'file-text' },
-  { name: 'アーカイブ', formats: 'ZIP, 7z, RAR 等', icon: 'archive' },
-]
-
-const techStack = [
-  '.NET 10', 'WinUI 3', 'R3', 'SQLite & EF Core', 'Magick.NET', 'FFMpegCore', 'Serilog', 'AutoDiAttributes'
-]
-
-const updateMousePos = (e: MouseEvent) => {
-  const cards = document.querySelectorAll('.feature-card')
-  cards.forEach((card) => {
-    const rect = (card as HTMLElement).getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
-    ;(card as HTMLElement).style.setProperty('--mouse-x', `${x}px`)
-    ;(card as HTMLElement).style.setProperty('--mouse-y', `${y}px`)
-  })
+interface HighlightItem {
+  label: string
+  detail: string
 }
 
-onMounted(() => {
-  window.addEventListener('mousemove', updateMousePos)
-})
+interface BentoItem {
+  id: string
+  title: string
+  description: string
+  icon: 'folder-tree' | 'layers' | 'refresh'
+}
 
-onUnmounted(() => {
-  window.removeEventListener('mousemove', updateMousePos)
-})
+interface ViewerMode {
+  name: string
+  key: string
+  summary: string
+}
+
+interface MediaTypeSpec {
+  name: string
+  formats: string[]
+  note: string
+  icon: 'image' | 'video' | 'pdf' | 'archive'
+}
+
+interface SystemSpec {
+  label: string
+  value: string
+}
+
+const coreHighlights: HighlightItem[] = [
+  {
+    label: '大量ファイルでも待たない表示',
+    detail: '読み込み中も操作が止まらず、数万件のメディアをスムーズに一覧・プレビュー',
+  },
+  {
+    label: '瞬時に絞り込める高速検索',
+    detail: 'タグ・フォルダ・解像度・評価・撮影日などを組み合わせて即座にフィルタリング',
+  },
+  {
+    label: 'マルチタブ・マルチウィンドウ',
+    detail: 'ブラウザのように複数タブや別ウィンドウを開き、並行して整理作業が可能',
+  },
+]
+
+const searchSuggestionRows = [
+  { token: 'prop.CreationTime >= 2026-01-01', type: '日時' },
+  { token: 'prop.FileSize > 100MB', type: '数値' },
+  { token: 'prop.MediaType = Image', type: '種別' },
+]
+
+const tagAliases = ['landscape', 'scenery', '自然景観']
+
+const secondaryFeatures: BentoItem[] = [
+  {
+    id: 'repository',
+    title: 'リポジトリ管理（フォルダ & アルバム）',
+    description:
+      'OSのディレクトリ構造をそのまま辿るフォルダリポジトリ（サブフォルダ包含切り替え対応）と、ドラッグ＆ドロップや「/」区切りの階層で整理できる仮想アルバムリポジトリを切り替えて管理できます。',
+    icon: 'folder-tree',
+  },
+  {
+    id: 'duplicates',
+    title: '重複ファイルの検出とサムネイル管理',
+    description:
+      'ファイル名が異なっていても中身が同じ重複ファイルを高速・正確に検出し、空き容量の確保をサポート。動画の好きなシーンを選べるサムネイルピッカーも搭載しています。',
+    icon: 'layers',
+  },
+  {
+    id: 'sync',
+    title: '外部ファイル変更の自動検出・同期',
+    description:
+      'エクスプローラー等でのファイル移動・リネーム・削除を検出し、タイトルバーに通知。専用ウィンドウから移動のみ・削除のみ等のフィルターで確認し、データベースへ個別または一括で反映できます。',
+    icon: 'refresh',
+  },
+]
+
+const viewerModes: ViewerMode[] = [
+  {
+    name: 'グリッド表示',
+    key: 'Wrap',
+    summary: 'サイズスライダーとオーバーレイ表示切り替えに対応したサムネイル一覧',
+  },
+  {
+    name: 'リスト表示',
+    key: 'List',
+    summary: '解像度・ファイルサイズ・作成日時・評価を列カスタマイズ可能なテーブル表示',
+  },
+  {
+    name: '詳細表示',
+    key: 'Detail',
+    summary: '選択中の画像やドキュメントを大きく確認できるプレビューモード',
+  },
+  {
+    name: 'マップ表示',
+    key: 'Map',
+    summary: 'EXIFのGPS座標から撮影地点を地図上にマッピングして閲覧',
+  },
+]
+
+const mapHighlights = [
+  'EXIF等から緯度・経度を自動抽出しデータベースへ保存',
+  '近接スポットを縮尺に応じてグループ化するクラスタリング表示',
+  '住所・地名トークンによる位置情報ベースの検索と絞り込み',
+]
+
+const mediaTypes: MediaTypeSpec[] = [
+  {
+    name: '画像',
+    formats: ['JPEG', 'PNG', 'GIF', 'BMP', 'TIFF', 'HEIF', 'PSD', 'RAW (RAF)', 'ICO', 'PCX', 'Netpbm'],
+    note: '写真・イラストからカメラのRAWデータまで。EXIF等の撮影情報も自動で読み取ります。',
+    icon: 'image',
+  },
+  {
+    name: '動画',
+    formats: ['MP4', 'MKV', 'AVI', 'MOV', '各種動画形式'],
+    note: '主要な動画フォーマットを網羅。動画内の好きなシーンを選んでサムネイルに設定できます。',
+    icon: 'video',
+  },
+  {
+    name: 'PDF',
+    formats: ['PDF'],
+    note: '複数ページのPDFドキュメントも軽快にプレビュー・サムネイル表示できます。',
+    icon: 'pdf',
+  },
+  {
+    name: 'アーカイブ',
+    formats: ['ZIP', '7z', 'RAR'],
+    note: 'ZIPなどの圧縮ファイルを解凍することなく、そのままライブラリ内で管理・閲覧できます。',
+    icon: 'archive',
+  },
+]
+
+const systemSpecs: SystemSpec[] = [
+  { label: '対応OS', value: 'Windows 10 (1809) 以降 / Windows 11' },
+  { label: '表示言語', value: '日本語 / 英語（切替・OS追従）' },
+  { label: 'ライセンス', value: '無料・オープンソース (MIT License)' },
+]
 </script>
 
 <template>
-  <main>
-    <section class="hero container text-center">
-      <div class="badge animate-fade-in">
-        <span class="pulse"></span>
-        <span>v1.0 is now available</span>
-      </div>
-      <h1 class="hero-title animate-fade-in delay-100">
-        <span class="text-gradient">メディア管理を</span><br>
-        <span class="text-accent-gradient">もっとスマートに</span>
-      </h1>
-      <p class="hero-subtitle animate-fade-in delay-200">
-        数万件のメディアも瞬時に検索。画像や動画、PDF、アーカイブをWindowsで軽快に管理。
-      </p>
-      <div class="hero-actions animate-fade-in delay-300">
-        <a href="https://github.com/xm-i/MediaDeck/releases" class="btn btn-primary btn-lg">
-          ダウンロード
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-        </a>
-        <a href="#features" class="btn btn-secondary btn-lg">機能を詳しく見る</a>
-      </div>
-    </section>
-
-    <section class="screenshots container">
-      <div class="screenshot-wrapper animate-fade-in delay-500">
-        <div class="screenshot-container glass-panel">
-          <img :src="mainImage" alt="MediaDeck Main Window" class="screenshot-img" />
+  <main class="home-main">
+    <!-- Hero Section -->
+    <section class="hero container">
+      <div class="hero-copy">
+        <div class="hero-meta-tag">
+          Windows 10 / 11 対応 ・ 無料 / オープンソース
         </div>
-        <div class="screenshot-glow"></div>
+        <h1 class="hero-title">
+          <span class="hero-phrase">数万件のメディアを、</span
+          ><span class="hero-phrase">瞬時に検索・整理する</span>
+        </h1>
+        <p class="hero-subtitle">
+          画像・RAW・動画・PDF・アーカイブを一元管理。数万ファイルのライブラリでも待たされることなく、タグ付け・条件検索・マップでの振り返りを軽快に行えます。
+        </p>
+        <div class="hero-actions">
+          <a
+            href="https://github.com/xm-i/MediaDeck/releases"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="btn btn-primary btn-lg"
+          >
+            最新リリースをダウンロード
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" x2="12" y1="15" y2="3" />
+            </svg>
+          </a>
+          <router-link to="/docs" class="btn btn-secondary btn-lg">
+            ドキュメントを読む
+          </router-link>
+        </div>
       </div>
-    </section>
 
-    <section id="features" class="features container">
-      <div class="section-header text-center">
-        <h2 class="section-title animate-fade-in">使い勝手にこだわった機能</h2>
-        <p class="section-subtitle animate-fade-in delay-100">Windowsネイティブならではの軽快なメディア体験を提供します。</p>
-      </div>
-      
-      <div class="features-grid">
-        <div v-for="(feature, index) in features" :key="index" :class="['feature-card', 'glass-panel', 'animate-fade-in', 'delay-' + (200 + index * 100)]">
-          <div class="feature-icon">
-            <svg v-if="feature.icon === 'folder'" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
-            <svg v-else-if="feature.icon === 'zap'" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-            <svg v-else-if="feature.icon === 'sliders'" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="21" y2="14"/><line x1="4" x2="20" y1="10" y2="3"/><line x1="12" x2="12" y1="21" y2="12"/><line x1="8" x2="8" y1="8" y2="3"/><line x1="16" x2="16" y1="21" y2="16"/><line x1="20" x2="20" y1="12" y2="3"/><line x1="2" x2="22" y1="14" y2="14"/><line x1="2" x2="22" y1="8" y2="8"/></svg>
-            <svg v-else-if="feature.icon === 'activity'" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-            <svg v-else-if="feature.icon === 'tag'" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42l-8.704-8.704z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></svg>
-            <svg v-else-if="feature.icon === 'layout'" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><line x1="3" x2="21" y1="9" y2="9"/><line x1="9" x2="9" y1="21" y2="9"/></svg>
+      <div class="hero-showcase">
+        <div class="showcase-frame">
+          <img
+            :src="mainImage"
+            alt="MediaDeck メインウィンドウの画面例（グリッド表示と検索バー、詳細ペイン）"
+            class="showcase-img"
+            width="1150"
+            height="822"
+          />
+        </div>
+
+        <div class="highlights-strip" aria-label="主な特徴">
+          <div
+            v-for="item in coreHighlights"
+            :key="item.label"
+            class="highlight-cell"
+          >
+            <div class="highlight-label">{{ item.label }}</div>
+            <p class="highlight-detail">{{ item.detail }}</p>
           </div>
-          <h3 class="feature-title">{{ feature.title }}</h3>
-          <p class="feature-desc">{{ feature.description }}</p>
         </div>
       </div>
     </section>
 
-    <section class="map-view container overflow-hidden">
-      <div class="map-content">
-        <div class="text-content animate-fade-in">
-          <h2 class="section-title">地図で思い出を振り返る</h2>
-          <p class="section-subtitle">GPS情報を自動抽出し、メディアを地図上にマッピング。撮影地をたどる新しいブラウジング体験が楽しめます。</p>
-          <ul class="feature-list">
-            <li><span>✔</span> 高精度な座標マッピング</li>
-            <li><span>✔</span> クラスタリング表示</li>
-            <li><span>✔</span> 撮影地からの逆引き検索</li>
+    <!-- Asymmetric Bento Grid Section -->
+    <section id="features" class="section container">
+      <div class="section-header">
+        <h2 class="section-title">高速検索と精緻なライブラリ管理</h2>
+        <p class="section-subtitle">
+          ペイン単位でリサイズ可能なマルチタブ構成と、大規模コレクションを前提とした検索・整理ワークフロー。
+        </p>
+      </div>
+
+      <div class="bento-grid">
+        <!-- Primary Card 1 (7 cols): Token Search & prop. -->
+        <article class="bento-card bento-span-7">
+          <div class="bento-card-header">
+            <div class="bento-icon" aria-hidden="true">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.3-4.3" />
+              </svg>
+            </div>
+            <div>
+              <h3 class="bento-title">トークン型検索 &amp; prop. プロパティ比較</h3>
+              <p class="bento-desc">
+                検索バーへの入力からタグ・フォルダ・アルバム・住所を即座にサジェスト。さらに
+                <code class="inline-code">prop.</code>
+                プレフィックスで解像度・評価・ファイルサイズ・日時・メディア種別の比較条件をトークンとして組み合わせて絞り込めます。
+              </p>
+            </div>
+          </div>
+
+          <!-- Rich HTML/CSS Mini-Mockup: Search Bar + Suggestion Popover -->
+          <div class="mini-mockup" aria-hidden="true">
+            <div class="search-bar-mock">
+              <span class="token-chip">Folder=C:\Photos</span>
+              <span class="token-chip">Tag: 風景</span>
+              <span class="token-chip token-chip-accent mono">prop.Width &gt;= 3840</span>
+              <span class="token-chip token-chip-accent mono">prop.Rate &gt;= 4</span>
+              <span class="search-cursor mono">prop.</span>
+            </div>
+
+            <div class="suggestion-popover">
+              <div class="suggestion-header">
+                <span>プロパティ候補サジェスト</span>
+                <span class="mono">prop.*</span>
+              </div>
+              <div
+                v-for="(row, idx) in searchSuggestionRows"
+                :key="row.token"
+                :class="['suggestion-row', { 'is-selected': idx === 0 }]"
+              >
+                <code class="mono suggestion-token">{{ row.token }}</code>
+                <span class="suggestion-type">{{ row.type }}</span>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- Primary Card 2 (5 cols): Hierarchical Tag & Ruby/Alias Management -->
+        <article class="bento-card bento-span-5">
+          <div class="bento-card-header">
+            <div class="bento-icon" aria-hidden="true">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42l-8.704-8.704z"
+                />
+                <circle cx="7.5" cy="7.5" r=".5" fill="currentColor" />
+              </svg>
+            </div>
+            <div>
+              <h3 class="bento-title">階層タグ・読み仮名(Ruby)・エイリアス管理</h3>
+              <p class="bento-desc">
+                タグごとにカテゴリ・読み仮名（Ruby）・自動変換ローマ字・別名（エイリアス）を登録でき、表記ゆれを吸収したタグ検索と詳細ペインからの素早い付与に対応します。
+              </p>
+            </div>
+          </div>
+
+          <!-- Rich HTML/CSS Mini-Mockup: Tag Inspector -->
+          <div class="mini-mockup" aria-hidden="true">
+            <div class="tag-inspector">
+              <div class="tag-inspector-top">
+                <div>
+                  <div class="tag-category-label">カテゴリ: 場所・景観</div>
+                  <div class="tag-main-name">風景</div>
+                </div>
+                <span class="tag-usage-badge mono tabular-nums">UsageCount: 142</span>
+              </div>
+
+              <div class="tag-meta-rows">
+                <div class="tag-meta-row">
+                  <span class="tag-meta-key">読み仮名 / ローマ字</span>
+                  <span class="tag-meta-val mono">ふうけい / fuukei</span>
+                </div>
+                <div class="tag-meta-row">
+                  <span class="tag-meta-key">エイリアス</span>
+                  <div class="tag-alias-list">
+                    <span v-for="alias in tagAliases" :key="alias" class="alias-pill">
+                      {{ alias }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- Secondary Cards (4 cols each) -->
+        <article
+          v-for="item in secondaryFeatures"
+          :key="item.id"
+          class="bento-card bento-span-4"
+        >
+          <div class="bento-icon" aria-hidden="true">
+            <svg
+              v-if="item.icon === 'folder-tree'"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.75"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path
+                d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"
+              />
+            </svg>
+            <svg
+              v-else-if="item.icon === 'layers'"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.75"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polygon points="12 2 2 7 12 12 22 7 12 2" />
+              <polyline points="2 17 12 22 22 17" />
+              <polyline points="2 12 12 17 22 12" />
+            </svg>
+            <svg
+              v-else
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.75"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+              <path d="M3 3v5h5" />
+              <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+              <path d="M16 16h5v5" />
+            </svg>
+          </div>
+          <h3 class="bento-title">{{ item.title }}</h3>
+          <p class="bento-desc">{{ item.description }}</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- Split-Panel Viewer & Map Showcase -->
+    <section id="map" class="section container">
+      <div class="split-panel">
+        <div class="split-copy">
+          <h2 class="section-title">4つのビューモードと地図ブラウジング</h2>
+          <p class="section-subtitle">
+            用途に応じた閲覧モードをワンクリックで切り替え。GPS情報を自動抽出し、撮影地ごとに写真をクラスタリング表示します。
+          </p>
+
+          <div class="viewer-mode-grid">
+            <div v-for="mode in viewerModes" :key="mode.key" class="viewer-mode-item">
+              <div class="viewer-mode-top">
+                <span class="viewer-mode-name">{{ mode.name }}</span>
+                <span class="viewer-mode-key mono">{{ mode.key }}</span>
+              </div>
+              <p class="viewer-mode-summary">{{ mode.summary }}</p>
+            </div>
+          </div>
+
+          <ul class="check-list">
+            <li v-for="point in mapHighlights" :key="point">
+              <svg
+                class="check-icon"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              <span>{{ point }}</span>
+            </li>
           </ul>
         </div>
-        <div class="map-image-wrapper glass-panel animate-fade-in delay-200">
-           <img :src="mapImage" alt="Map View" class="map-img" />
-        </div>
-      </div>
-    </section>
 
-    <section id="media" class="media-types container">
-      <div class="section-header text-center">
-        <h2 class="section-title">画像も動画もこれひとつで</h2>
-        <p class="section-subtitle">RAW画像からアーカイブまで、あらゆるメディアに対応。</p>
-      </div>
-      
-      <div class="media-grid">
-        <div v-for="(media, index) in mediaTypes" :key="index" class="media-card glass-panel">
-          <div class="media-header">
-            <div class="media-icon">
-              <svg v-if="media.icon === 'image'" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
-              <svg v-else-if="media.icon === 'video'" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg>
-              <svg v-else-if="media.icon === 'file-text'" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/></svg>
-              <svg v-else-if="media.icon === 'archive'" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="4" rx="2"/><path d="M4 9v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9"/><path d="M10 13h4"/></svg>
-            </div>
-            <h3 class="media-title">{{ media.name }}</h3>
+        <div class="map-showcase">
+          <div class="showcase-frame">
+            <img
+              :src="mapImage"
+              alt="MediaDeck マップビュー（位置情報に基づく写真のピン表示とクラスタリング）"
+              class="showcase-img"
+              width="1336"
+              height="811"
+            />
           </div>
-          <p class="media-formats">{{ media.formats }}</p>
+          <p class="frame-caption">
+            マップ表示 — GPS座標によるピン留めとクラスター集計
+          </p>
         </div>
       </div>
     </section>
 
-    <section id="stack" class="tech-stack container">
-      <div class="tech-card glass-panel text-center">
-        <h2 class="section-title">モダンな技術スタック</h2>
-        <p class="section-subtitle mb-8">最新の.NETエコシステムを採用し、パフォーマンスと保守性を追求しています。</p>
-        
-        <div class="stack-tags">
-          <span v-for="tech in techStack" :key="tech" class="stack-tag">{{ tech }}</span>
+    <!-- Media Formats -->
+    <section id="media" class="section container">
+      <div class="section-header">
+        <h2 class="section-title">画像も動画も、これひとつで管理</h2>
+        <p class="section-subtitle">
+          写真やRAWデータから動画・PDF・圧縮書庫まで、普段使うファイルをひとつのライブラリで快適に扱えます。
+        </p>
+      </div>
+
+      <div class="media-spec-grid">
+        <div v-for="media in mediaTypes" :key="media.name" class="media-spec-card">
+          <div class="media-spec-top">
+            <div class="media-spec-title-group">
+              <div class="media-spec-icon" aria-hidden="true">
+                <svg
+                  v-if="media.icon === 'image'"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                  <circle cx="9" cy="9" r="2" />
+                  <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                </svg>
+                <svg
+                  v-else-if="media.icon === 'video'"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="m22 8-6 4 6 4V8Z" />
+                  <rect width="14" height="12" x="2" y="6" rx="2" ry="2" />
+                </svg>
+                <svg
+                  v-else-if="media.icon === 'pdf'"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="16" x2="8" y1="13" y2="13" />
+                  <line x1="16" x2="8" y1="17" y2="17" />
+                </svg>
+                <svg
+                  v-else
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <rect width="20" height="5" x="2" y="4" rx="2" />
+                  <path d="M4 9v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9" />
+                  <path d="M10 13h4" />
+                </svg>
+              </div>
+              <h3 class="media-spec-name">{{ media.name }}</h3>
+            </div>
+          </div>
+
+          <p class="media-spec-note">{{ media.note }}</p>
+
+          <div class="format-list">
+            <span v-for="fmt in media.formats" :key="fmt" class="format-token mono">
+              {{ fmt }}
+            </span>
+          </div>
         </div>
+      </div>
+    </section>
+
+    <!-- System Specs & Final CTA -->
+    <section id="requirements" class="section section-last container">
+      <div class="specs-panel">
+        <div class="specs-header">
+          <div>
+            <h2 class="specs-title">システム要件と導入ガイド</h2>
+            <p class="specs-subtitle">
+              Windows 環境ですぐに使い始められます。導入方法や操作手順はドキュメントをご確認ください。
+            </p>
+          </div>
+          <div class="specs-cta">
+            <a
+              href="https://github.com/xm-i/MediaDeck/releases"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="btn btn-primary btn-md"
+            >
+              最新リリースをダウンロード
+            </a>
+            <router-link to="/docs" class="btn btn-secondary btn-md">
+              ドキュメントを読む
+            </router-link>
+          </div>
+        </div>
+
+        <dl class="system-spec-row">
+          <div v-for="spec in systemSpecs" :key="spec.label" class="system-spec-cell">
+            <dt class="spec-label">{{ spec.label }}</dt>
+            <dd class="spec-value tabular-nums">{{ spec.value }}</dd>
+          </div>
+        </dl>
       </div>
     </section>
   </main>
 </template>
 
 <style scoped>
-/* Sections */
-section {
-  padding: 8rem 0;
+.home-main {
+  padding-top: 60px;
 }
 
+.section {
+  padding: 56px 0;
+}
+
+.section-last {
+  padding-bottom: 80px;
+}
+
+.section-header {
+  margin-bottom: 32px;
+  max-width: 68ch;
+}
+
+.section-title {
+  font-size: clamp(1.5rem, 2.5vw, 1.875rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
+.section-subtitle {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  line-height: 1.65;
+}
+
+/* Hero Section */
 .hero {
-  padding-top: 12rem;
-  padding-bottom: 4rem;
+  padding-top: 64px;
+  padding-bottom: 48px;
 }
 
-.badge {
+.hero-copy {
+  max-width: 760px;
+  margin: 0 auto 40px;
+  text-align: center;
+}
+
+.hero-meta-tag {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1.25rem;
-  background: rgba(0, 163, 255, 0.1);
-  border: 1px solid rgba(0, 163, 255, 0.2);
-  color: #00a3ff;
-  border-radius: 9999px;
+  padding: 6px 12px;
+  margin-bottom: 20px;
   font-size: 0.8125rem;
-  font-weight: 600;
-  margin-bottom: 2.5rem;
-  letter-spacing: 0.02em;
-}
-
-.pulse {
-  width: 6px;
-  height: 6px;
-  background: #00a3ff;
-  border-radius: 50%;
-  position: relative;
-}
-
-.pulse::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: inherit;
-  border-radius: inherit;
-  animation: badge-pulse 2s ease-out infinite;
-}
-
-@keyframes badge-pulse {
-  0% { transform: scale(1); opacity: 1; }
-  100% { transform: scale(3); opacity: 0; }
+  font-weight: 500;
+  color: var(--text-secondary);
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 9999px;
 }
 
 .hero-title {
-  font-size: clamp(3.5rem, 8vw, 6rem);
-  margin-bottom: 1.5rem;
-  font-weight: 800;
-  line-height: 1.1;
+  font-size: clamp(1.875rem, 4.5vw, 3.25rem);
+  font-weight: 700;
+  line-height: 1.22;
+  letter-spacing: -0.025em;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+}
+
+.hero-phrase {
+  display: inline-block;
 }
 
 .hero-subtitle {
-  font-size: clamp(1.25rem, 2.5vw, 1.5rem);
+  font-size: 1.0625rem;
   color: var(--text-secondary);
-  max-width: 800px;
-  margin: 0 auto 3.5rem;
-  line-height: 1.5;
+  max-width: 62ch;
+  margin: 0 auto 28px;
+  line-height: 1.7;
 }
 
 .hero-actions {
   display: flex;
+  align-items: center;
   justify-content: center;
-  gap: 1.5rem;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
-.section-header {
-  margin-bottom: 4rem;
-}
-
-.section-title {
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
-}
-
-.section-subtitle {
-  font-size: 1.125rem;
-  color: var(--text-secondary);
-}
-
-/* Screenshots */
-.screenshot-wrapper {
-  position: relative;
-  padding: 2rem 0;
-  perspective: 1000px;
-}
-
-.screenshot-container {
-  padding: 0.5rem;
-  border-radius: 0;
-  overflow: hidden;
-  box-shadow: 0 30px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05);
-  animation: float 6s ease-in-out infinite;
-  position: relative;
-  z-index: 2;
-  width: fit-content;
+.hero-showcase {
+  max-width: 1080px;
   margin: 0 auto;
 }
 
-.screenshot-glow {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 80%;
-  height: 80%;
-  background: var(--accent-glow);
-  filter: blur(100px);
-  z-index: 1;
-  opacity: 0.5;
+.showcase-frame {
+  padding: 8px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
 }
 
-.screenshot-img {
-  max-width: 100%;
-  height: auto;
+.showcase-img {
   display: block;
-  border-radius: 0;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-xs);
 }
 
-.overflow-hidden {
-  overflow: hidden;
+.highlights-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 16px;
 }
 
-.feature-list {
-  list-style: none;
-  margin-top: 2rem;
+.highlight-cell {
+  padding: 16px 20px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.highlight-label {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--accent-primary);
+  margin-bottom: 6px;
+}
+
+.highlight-detail {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+/* Bento Grid */
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.bento-card {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  padding: 24px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  min-width: 0;
+  transition: border-color 140ms cubic-bezier(0.23, 1, 0.32, 1);
 }
 
-.feature-list li {
+.bento-card:hover {
+  border-color: var(--border-hover);
+}
+
+.bento-span-7 {
+  grid-column: span 7;
+}
+
+.bento-span-5 {
+  grid-column: span 5;
+}
+
+.bento-span-4 {
+  grid-column: span 4;
+}
+
+.bento-card-header {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-.feature-list li span {
-  color: #00a3ff;
-}
-/* Features */
-.features-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.5rem;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.feature-card {
-  padding: 2.5rem;
-  position: relative;
-  overflow: hidden;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.feature-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(800px circle at var(--mouse-x) var(--mouse-y), rgba(255, 255, 255, 0.06), transparent 40%);
-  opacity: 0;
-  transition: opacity 0.5s;
-  pointer-events: none;
-}
-
-.feature-card:hover {
-  transform: translateY(-8px);
-  border-color: rgba(0, 163, 255, 0.3);
-  background: rgba(20, 20, 20, 0.4);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-}
-
-.feature-card:hover::before {
-  opacity: 1;
-}
-
-.feature-icon {
-  width: 56px;
-  height: 56px;
-  background: linear-gradient(135deg, rgba(0, 163, 255, 0.2) 0%, rgba(0, 210, 255, 0.2) 100%);
-  color: #00a3ff;
-  border-radius: 16px;
-  display: flex;
+.bento-icon {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 2rem;
-  border: 1px solid rgba(0, 163, 255, 0.3);
+  border-radius: var(--radius-sm);
+  background-color: var(--accent-subtle);
+  border: 1px solid var(--accent-border);
+  color: var(--accent-primary);
+  margin-bottom: 12px;
+  flex-shrink: 0;
 }
 
-.feature-title {
-  font-size: 1.25rem;
-  margin-bottom: 0.75rem;
+.bento-card-header .bento-icon {
+  margin-bottom: 0;
 }
 
-.feature-desc {
-  color: var(--text-secondary);
-  font-size: 0.9375rem;
-}
-
-/* Map View Section */
-.map-view {
-  padding-top: 4rem;
-}
-
-.map-content {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4rem;
-  align-items: center;
-}
-
-.map-image-wrapper {
-  padding: 0.5rem;
-  border-radius: 20px;
-}
-
-.map-img {
-  width: 100%;
-  border-radius: 12px;
-  display: block;
-}
-
-/* Media Types */
-.media-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 1.5rem;
-}
-
-.media-card {
-  padding: 1.5rem;
-}
-
-.media-header {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-}
-
-.media-icon {
-  color: var(--text-secondary);
-}
-
-.media-title {
+.bento-title {
   font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
 }
 
-.media-formats {
-  color: var(--text-muted);
-  font-size: 0.875rem;
+.bento-desc {
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+  line-height: 1.65;
 }
 
-/* Tech Stack */
-.tech-card {
-  padding: 4rem 2rem;
+.inline-code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  color: var(--accent-primary);
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  padding: 1px 6px;
+  border-radius: var(--radius-xs);
 }
 
-.stack-tags {
+/* Rich Mini-Mockups inside Bento Cards */
+.mini-mockup {
+  margin-top: 20px;
+  padding: 12px;
+  background-color: var(--bg-canvas);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.search-bar-mock {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.75rem;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
 }
 
-.stack-tag {
-  padding: 0.5rem 1rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+.token-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  font-size: 0.75rem;
+  color: var(--text-primary);
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+}
+
+.token-chip-accent {
+  color: var(--accent-primary);
+  background-color: var(--accent-subtle);
+  border-color: var(--accent-border);
+}
+
+.search-cursor {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  padding-left: 2px;
+}
+
+.suggestion-popover {
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+  overflow: hidden;
+}
+
+.suggestion-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.suggestion-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 10px;
+  font-size: 0.75rem;
+}
+
+.suggestion-row + .suggestion-row {
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.suggestion-row.is-selected {
+  background-color: rgba(56, 189, 248, 0.08);
+}
+
+.suggestion-token {
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.suggestion-type {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+}
+
+.tag-inspector {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px;
+}
+
+.tag-inspector-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.tag-category-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.tag-main-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.tag-usage-badge {
+  font-size: 0.75rem;
+  color: var(--accent-primary);
+  background-color: var(--accent-subtle);
+  border: 1px solid var(--accent-border);
+  padding: 2px 8px;
+  border-radius: var(--radius-xs);
+  white-space: nowrap;
+}
+
+.tag-meta-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tag-meta-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tag-meta-key {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.tag-meta-val {
+  font-size: 0.8125rem;
+  color: var(--text-primary);
+}
+
+.tag-alias-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.alias-pill {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  padding: 2px 8px;
+  border-radius: var(--radius-xs);
+}
+
+/* Split-Panel Viewer & Map Showcase */
+.split-panel {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 40px;
+  align-items: center;
+}
+
+.viewer-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 24px;
+  margin-bottom: 24px;
+}
+
+.viewer-mode-item {
+  padding: 14px 16px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.viewer-mode-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.viewer-mode-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.viewer-mode-key {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.viewer-mode-summary {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.check-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.check-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+}
+
+.check-icon {
+  color: var(--accent-primary);
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.map-showcase {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.frame-caption {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  text-align: right;
+}
+
+/* Media Specification Grid */
+.media-spec-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.media-spec-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 24px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+.media-spec-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.media-spec-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.media-spec-icon {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+}
+
+.media-spec-name {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.media-spec-note {
   font-size: 0.875rem;
   color: var(--text-secondary);
-  transition: color 0.2s ease, border-color 0.2s ease;
 }
 
-.stack-tag:hover {
+.format-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 4px;
+}
+
+.format-token {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  padding: 3px 8px;
+  border-radius: var(--radius-xs);
+}
+
+/* System Requirements Panel */
+.specs-panel {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.specs-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.specs-title {
+  font-size: 1.375rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.specs-subtitle {
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+  max-width: 60ch;
+}
+
+.specs-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.system-spec-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.system-spec-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.spec-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.spec-value {
+  font-size: 0.875rem;
+  font-weight: 500;
   color: var(--text-primary);
-  border-color: rgba(255, 255, 255, 0.2);
 }
 
-.mb-8 { margin-bottom: 2rem; }
+/* Responsive Breakpoints */
+@media (max-width: 960px) {
+  .bento-span-7,
+  .bento-span-5,
+  .bento-span-4 {
+    grid-column: span 12;
+  }
+
+  .split-panel {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+}
 
 @media (max-width: 768px) {
-  .map-content { grid-template-columns: 1fr; }
-  .hero-title { font-size: 2.5rem; }
+  .hero {
+    padding-top: 40px;
+    padding-bottom: 36px;
+  }
+
+  .hero-meta-tag {
+    font-size: 0.75rem;
+    padding: 5px 10px;
+  }
+
+  .hero-copy {
+    text-align: left;
+    margin-bottom: 28px;
+  }
+
+  .hero-subtitle {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .hero-actions {
+    justify-content: flex-start;
+  }
+
+  .hero-actions .btn {
+    width: 100%;
+  }
+
+  .section {
+    padding: 40px 0;
+  }
+
+  .highlights-strip,
+  .media-spec-grid,
+  .viewer-mode-grid,
+  .system-spec-row {
+    grid-template-columns: 1fr;
+  }
+
+  .frame-caption {
+    text-align: left;
+  }
+
+  .specs-panel {
+    padding: 20px;
+  }
+
+  .specs-cta {
+    width: 100%;
+  }
+
+  .specs-cta .btn {
+    flex: 1 1 200px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-title {
+    font-size: 1.625rem;
+  }
 }
 </style>

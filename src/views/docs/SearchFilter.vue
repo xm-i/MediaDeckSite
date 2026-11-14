@@ -71,6 +71,6 @@
 
     <h2>ソート機能</h2>
     <p>ソート条件も複数組み合わせて設定でき、昇順/降順の切り替えが可能です。ソートマネージャーでプリセットとして管理できます。</p>
-    <p>利用可能なソートキー: FilePath, CreationTime, ModifiedTime, LastAccessTime, RegisteredTime, FileSize, Rate, Location, Resolution, UsageCount</p>
+    <p>利用可能なソートキー: FilePath, CreationTime, ModifiedTime, LastAccessTime, RegisteredTime, FileSize, Rate, Location, Resolution, UsageCount, Random</p>
   </div>
 </template>

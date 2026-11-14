@@ -16,14 +16,6 @@
           <td>Windows 10 (1809) 以降</td>
         </tr>
         <tr>
-          <th>ランタイム</th>
-          <td>.NET 10</td>
-        </tr>
-        <tr>
-          <th>UIフレームワーク</th>
-          <td>WinUI 3 (Windows App SDK)</td>
-        </tr>
-        <tr>
           <th>言語対応</th>
           <td>日本語 / 英語（アプリ内で切り替え可能、システム既定にも追従）</td>
         </tr>
@@ -49,7 +41,7 @@
         </tr>
         <tr>
           <td><strong>PDF</strong></td>
-          <td>Windows.Data.Pdf による高速表示・サムネイル生成</td>
+          <td>高速なページ表示・サムネイル生成</td>
         </tr>
         <tr>
           <td><strong>アーカイブ</strong></td>
