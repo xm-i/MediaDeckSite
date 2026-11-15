@@ -107,24 +107,28 @@ SQL
 
 ※ アプリ起動時のテーブル自動作成は行わないため、初回デプロイ前に `infra/init-db.sql`（または上記の `CREATE TABLE` 文）を手動実行して `feedbacks` テーブルを作成してください。
 
-#### GitHub Secrets (`APPSETTINGS_JSON`) の登録
+#### Slack App の設定（通知用 Bot Token の取得）
 
-GitHub リポジトリの `Settings > Secrets and variables > Actions` に `APPSETTINGS_JSON` シークレットを作成し、以下の JSON テンプレート（`Password` を実際の値に置換）を登録してください。デプロイ時に `publish/appsettings.json` へ上書き出力されます。
+1. [Slack API](https://api.slack.com/apps) でアプリを作成（From scratch）し、**OAuth & Permissions > Bot Token Scopes** に以下の 2 つの権限を追加します。
+   - `chat:write`（通知メッセージの投稿）
+   - `files:write`（スクリーンショット画像およびログファイルの添付）
+2. ワークスペースへアプリをインストールし、発行された **Bot User OAuth Token**（`xoxb-...`）を控えます。
+3. Slack 上で通知先チャンネルを作成（または既存チャンネルを選択）し、チャンネル内で `/invite @<アプリ名>` を実行して Bot を招待します。
+4. チャンネル名をクリックして表示される最下部の **チャンネル ID**（`C...`）を控えます。
 
-```json
-{
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft.AspNetCore": "Warning"
-    }
-  },
-  "AllowedHosts": "*",
-  "ConnectionStrings": {
-    "DefaultConnection": "Host=localhost;Port=5432;Database=mediadeck;Username=mediadeck;Password=<PASSWORD>"
-  }
-}
-```
+#### GitHub Secrets の登録
+
+GitHub リポジトリの `Settings > Secrets and variables > Actions` に以下のシークレットを登録してください。デプロイ時に `DB_CONNECTION`・`SLACK_BOT_TOKEN`・`SLACK_CHANNEL_ID` から `publish/appsettings.json` が自動生成されます（いずれかが未設定の場合はワークフローがエラーで停止します）。
+
+| Secret 名 | 用途 | 設定例 |
+| --- | --- | --- |
+| `DEPLOY_HOST` | デプロイ先サーバーのホスト名 / IP アドレス（既存） | `mediadeck.xm-i.net` |
+| `DEPLOY_SSH_KEY` | デプロイ用 SSH 秘密鍵（既存） | `-----BEGIN OPENSSH PRIVATE KEY----- ...` |
+| `DB_CONNECTION` | PostgreSQL 接続文字列 | `Host=localhost;Port=5432;Database=mediadeck;Username=mediadeck;Password=<PASSWORD>` |
+| `SLACK_BOT_TOKEN` | Slack Bot User OAuth Token | `xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx` |
+| `SLACK_CHANNEL_ID` | 通知先 Slack チャンネル ID | `C0123456789` |
+
+※ 値はそのまま登録でき、手動で JSON 文字列や 1 行 JSON にエスケープする必要はありません（ワークフロー内で `jq` を用いて安全に `publish/appsettings.json` を生成します）。
 
 ### 6. 動作確認・ログ確認
 

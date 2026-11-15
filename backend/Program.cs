@@ -1,5 +1,6 @@
 using System.Threading.RateLimiting;
 using MediaDeckSite.Data;
+using MediaDeckSite.Options;
 using MediaDeckSite.Services;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
@@ -17,6 +18,12 @@ if (!Directory.Exists(wwwrootPath) && Directory.Exists(frontendDistPath))
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.Configure<SlackOptions>(builder.Configuration.GetSection(SlackOptions.SectionName));
+builder.Services.AddHttpClient<ISlackNotifier, SlackNotifier>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(15);
+});
 
 builder.Services.AddRateLimiter(options =>
 {

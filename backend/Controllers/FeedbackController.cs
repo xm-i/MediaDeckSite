@@ -11,7 +11,10 @@ namespace MediaDeckSite.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/feedback")]
-public class FeedbackController(AppDbContext dbContext, ILogger<FeedbackController> logger) : ControllerBase
+public class FeedbackController(
+    AppDbContext dbContext,
+    ISlackNotifier slackNotifier,
+    ILogger<FeedbackController> logger) : ControllerBase
 {
     private const int MaxTitleLength = 500;
     private const int MaxDescriptionLength = 50_000;
@@ -103,6 +106,15 @@ public class FeedbackController(AppDbContext dbContext, ILogger<FeedbackControll
         await dbContext.SaveChangesAsync(cancellationToken);
 
         logger.LogInformation("Feedback {FeedbackId} saved (Category: {Category})", entity.Id, entity.Category);
+
+        try
+        {
+            await slackNotifier.NotifyFeedbackAsync(entity, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to send Slack notification for feedback {FeedbackId}.", entity.Id);
+        }
 
         return Ok(new { ok = true });
     }

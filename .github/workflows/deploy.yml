@@ -47,13 +47,40 @@ jobs:
       - name: Publish backend
         run: dotnet publish backend/MediaDeckSite.csproj -c Release -o publish
 
-      - name: Write production appsettings.json
+      - name: Create appsettings.json from Secrets
+        shell: bash
         env:
-          APPSETTINGS_JSON: ${{ secrets.APPSETTINGS_JSON }}
+          DB_CONNECTION: ${{ secrets.DB_CONNECTION }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
         run: |
-          if [ -n "$APPSETTINGS_JSON" ]; then
-            printf '%s\n' "$APPSETTINGS_JSON" > publish/appsettings.json
-          fi
+          set -euo pipefail
+          for v in DB_CONNECTION SLACK_BOT_TOKEN SLACK_CHANNEL_ID; do
+            if [ -z "${!v:-}" ]; then
+              echo "Missing required secret: $v" >&2
+              exit 1
+            fi
+          done
+          jq -n \
+            --arg db "$DB_CONNECTION" \
+            --arg slack_token "$SLACK_BOT_TOKEN" \
+            --arg slack_channel "$SLACK_CHANNEL_ID" \
+            '{
+              Logging: {
+                LogLevel: {
+                  Default: "Information",
+                  "Microsoft.AspNetCore": "Warning"
+                }
+              },
+              AllowedHosts: "*",
+              ConnectionStrings: {
+                DefaultConnection: $db
+              },
+              Slack: {
+                BotToken: $slack_token,
+                ChannelId: $slack_channel
+              }
+            }' > publish/appsettings.json
 
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.0
