@@ -6,6 +6,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.*" />
+  </ItemGroup>
+
   <Target Name="CopyFrontendDistToPublish" AfterTargets="ComputeFilesToPublish" Condition="Exists('$(MSBuildProjectDirectory)/../frontend/dist')">
     <ItemGroup>
       <DistFiles Include="$(MSBuildProjectDirectory)/../frontend/dist/**/*" />

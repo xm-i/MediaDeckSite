@@ -1,4 +1,8 @@
+using System.Threading.RateLimiting;
+using MediaDeckSite.Data;
+using MediaDeckSite.Services;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,6 +15,30 @@ if (!Directory.Exists(wwwrootPath) && Directory.Exists(frontendDistPath))
     builder.Environment.WebRootFileProvider = new PhysicalFileProvider(frontendDistPath);
 }
 
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+        await context.HttpContext.Response.WriteAsJsonAsync(new { error = "Too Many Requests" }, cancellationToken);
+    };
+
+    options.AddPolicy("feedback", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: ClientIpResolver.GetClientIp(httpContext),
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+                AutoReplenishment = true,
+            }));
+});
+
 builder.Services.AddControllers();
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
@@ -22,6 +50,7 @@ var app = builder.Build();
 app.UseForwardedHeaders();
 app.UseDefaultFiles();
 app.UseStaticFiles();
+app.UseRateLimiter();
 
 app.MapControllers();
 

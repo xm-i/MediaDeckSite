@@ -47,6 +47,14 @@ jobs:
       - name: Publish backend
         run: dotnet publish backend/MediaDeckSite.csproj -c Release -o publish
 
+      - name: Write production appsettings.json
+        env:
+          APPSETTINGS_JSON: ${{ secrets.APPSETTINGS_JSON }}
+        run: |
+          if [ -n "$APPSETTINGS_JSON" ]; then
+            printf '%s\n' "$APPSETTINGS_JSON" > publish/appsettings.json
+          fi
+
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.0
         with:
